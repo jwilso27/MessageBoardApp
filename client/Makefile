@@ -1,4 +1,4 @@
-CC=gcc
+CC=g++
 FILE=myfrm
 CFLAGS=-Wall -g
 LDFLAGS=-lssl
