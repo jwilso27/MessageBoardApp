@@ -9,7 +9,7 @@ int main(int argc, char * argv[]){
     // initialize parameters
     FILE *fp;
     struct hostent *hp;
-    struct sockaddr_in udp_sin, tcp_sin;
+    struct sockaddr_in udp_sin, tcp_sin, server_addr;
     char *host, *username, *passwd, buf[MAX_LINE];
     int port, udp_s, tcp_s, size, i, flag = 1;
 
@@ -60,8 +60,11 @@ int main(int argc, char * argv[]){
         exit(1);
     }   
 
+/*
     // get acknowledgement from server
-    my_recvfrom( udp_s, &flag, sizeof(flag), 0 );
+    my_recvfrom( udp_s, &flag, sizeof(flag), 0, &server_addr );
+    printf("recvd ack\n");
+
     
     // if negative acknowledgement
     if ( !flag ) {
@@ -69,19 +72,31 @@ int main(int argc, char * argv[]){
         close( tcp_s );
         exit(1);
     }
+*/
 
-    // get username and send to server
-    username = user_query( udp_s, "Username", &udp_sin );
+    // user authentication
+    do {
+        // get username and send to server
+        username = user_query( udp_s, "Username", &udp_sin );
 
-    // get if user exists 
-    my_recvfrom( udp_s, &flag, sizeof(flag), 0 );
+        // get if user exists 
+        my_recvfrom( udp_s, &flag, sizeof(flag), 0, &server_addr );
 
-    // get password and send to server (new user)
-    if ( !flag ) passwd = user_query( udp_s, "Create Password", &udp_sin );
-    while ( flag ) {
-        
-    }
+        // get password and send to server
+        if ( !flag ) passwd = user_query( udp_s, "Create Password", &server_addr );
+        else {
+            // get password
+            passwd = user_query( udp_s, "Password", &server_addr );
 
+            // recv whether password is correct
+            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &server_addr );
+
+            // prompt if password is incorrect
+            if ( flag ) printf("Incorrect password\n");
+        }
+    } while ( flag );
+    
+    // handle user operation
     while (1) {
         // clear buf
         bzero( buf, sizeof(buf) );
@@ -106,6 +121,32 @@ int main(int argc, char * argv[]){
         );
         scanf( "%s", buf );
 
+        // send command to server
+        my_sendto( udp_s, buf, 4, 0, &server_addr );
+
+        if ( strncmp( buf, "CRT", 3 ) == 0 ) {
+
+        } else if ( strncmp( buf, "LIS", 3 ) == 0 ) {
+
+        } else if ( strncmp( buf, "MSG", 3 ) == 0 ) {
+
+        } else if ( strncmp( buf, "DLT", 3 ) == 0 ) {
+
+        } else if ( strncmp( buf, "RDB", 3 ) == 0 ) {
+
+        } else if ( strncmp( buf, "EDT", 3 ) == 0 ) {
+
+        } else if ( strncmp( buf, "APN", 3 ) == 0 ) {
+
+        } else if ( strncmp( buf, "DWN", 3 ) == 0 ) {
+
+        } else if ( strncmp( buf, "DST", 3 ) == 0 ) {
+
+        } else if ( strncmp( buf, "XIT", 3 ) == 0 ) {
+
+        } else if ( strncmp( buf, "SHT", 3 ) == 0 ) {
+
+        } else printf("Invalid operation\n");
     }
 
 }

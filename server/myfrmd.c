@@ -9,11 +9,11 @@
 
 int main(int argc, char * argv[]){
     // initialize parameters
-    FILE *users_fp;
-    struct sockaddr_in udp_sin, tcp_sin;
-    char buf[MAX_LINE];
-    char *username, *passwd, *input_passwd, *admin_passwd;
-    int port, udp_s, tcp_s, new_tcp, opt = 1, i, size, flag = 1;
+    FILE *fp;
+    struct sockaddr_in udp_sin, tcp_sin, client_addr;
+    char buf[MAX_LINE], *username, *input_passwd, *passwd, *admin_passwd;
+    int port, udp_s, tcp_s, new_tcp;
+    int opt = 1, i, size = sizeof(struct sockaddr), flag = 1;
     short int len;
 
     // check arguments
@@ -46,40 +46,56 @@ int main(int argc, char * argv[]){
     // passive open (tcp)
     if ( ( tcp_s = socket( PF_INET, SOCK_STREAM, 0 ) ) < 0 ) {   
         perror("socket error");
+        close( udp_s );
         exit(1);    
     }   
 
     // set socket option   
     if ( ( setsockopt( tcp_s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(int) ) ) < 0 ) {   
         perror ("socket option error");  
+        close( udp_s );
+        close( tcp_s );
         exit(1);
     }   
 
     // bind socket (udp)
     if ( ( bind( udp_s, (struct sockaddr*)&udp_sin, sizeof(udp_sin) ) ) < 0 ) {
         perror("bind error");
+        close( udp_s );
+        close( tcp_s );
         exit(1);
     }
     
     // bind socket (tcp)
     if ( ( bind( tcp_s, (struct sockaddr *)&tcp_sin, sizeof(tcp_sin) ) ) < 0 ) {   
         perror("bind error");
+        close( udp_s );
+        close( tcp_s );
         exit(1);
     }
 
     // listen for client
     if ( ( listen( tcp_s, MAX_PENDING ) ) < 0 ) {   
         perror("listen error");
+        close( udp_s );
+        close( tcp_s );
         exit(1);    
     }    
+
+    // initialize users.txt
+    fp = fopen( "users.txt", "w" );
+    fclose( fp );
 
     // main loop
     while (1) { // wait for tcp connection
         if ( ( new_tcp = accept( tcp_s, (struct sockaddr *)&tcp_sin, (socklen_t *)&size ) ) < 0 ) {   
             perror("accept error");   
-            flag = 0;
+            close( udp_s );
+            close( tcp_s );
+            exit(1);
         }
-        
+
+/*        
         // send acknowledgement
         my_sendto( udp_s, &flag, sizeof(flag), 0, &udp_sin );
 
@@ -89,31 +105,72 @@ int main(int argc, char * argv[]){
             close( tcp_s );           
             continue;
         }
+*/
 
-        // get user info from client
-        string_recvfrom( udp_s, username, 0 );
-        
-        // check if user exists and send acknowledgement
-        if ( ( passwd = check_user( username ) ) == NULL ) flag = 0;
-        my_sendto( udp_s, &flag, sizeof(flag), 0, &udp_sin );
-        
-        // get password from client (new user)
-        if ( !flag ) {
-            string_recvfrom( udp_s, passwd, 0 );
-            // add user/passwd
-        }
+        // user authentication
+        do {
+            // get user info from client
+            string_recvfrom( udp_s, buf, 0, &client_addr );
+            username = strdup( buf );
+            
+            // check if user exists and send confirmation
+            if ( ( passwd = check_user( username ) ) == NULL ) flag = 0;
+            my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
+            
+            // get password from client
+            if ( !flag ) {
+                string_recvfrom( udp_s, buf, 0, &client_addr );
+                passwd = strdup( buf );
+                create_user( username, passwd );
+            } else {
+                // get password
+                string_recvfrom( udp_s, buf, 0, &client_addr );
+                input_passwd = strdup( buf );
 
-        // get password from client (existing user)
-        while ( flag ) {
-            string_recvfrom( udp_s, input_passwd, 0 );
-            flag = strcmp( input_passwd, passwd )
-            my_sendto( udp_s, &flag, sizeof(flag), 0, &udp_sin );
-        }
+                // check if password is correct
+                flag = strcmp( input_passwd, passwd );
 
-        while (1) { // wait for operation from client
-            bzero( buf, sizeof(buf) ); // clear buf
+                // send confirmation to client
+                my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
+            }
+        } while ( flag );
+
+        // wait for operation from client
+        while (1) { 
+            // clear buf
+            bzero( buf, sizeof(buf) ); 
+
+            // reset other parameters
+            flag = 1;
 
             // receive command from client
+            my_recvfrom( udp_s, buf, sizeof(buf), 0, &client_addr );
+            printf("%s\n",buf);
+
+            // handle command
+            if ( strncmp( buf, "CRT", 3 ) == 0 ) {
+
+            } else if ( strncmp( buf, "LIS", 3 ) == 0 ) {
+
+            } else if ( strncmp( buf, "MSG", 3 ) == 0 ) {
+
+            } else if ( strncmp( buf, "DLT", 3 ) == 0 ) {
+
+            } else if ( strncmp( buf, "RDB", 3 ) == 0 ) {
+
+            } else if ( strncmp( buf, "EDT", 3 ) == 0 ) {
+
+            } else if ( strncmp( buf, "APN", 3 ) == 0 ) {
+
+            } else if ( strncmp( buf, "DWN", 3 ) == 0 ) {
+
+            } else if ( strncmp( buf, "DST", 3 ) == 0 ) {
+
+            } else if ( strncmp( buf, "XIT", 3 ) == 0 ) {
+
+            } else if ( strncmp( buf, "SHT", 3 ) == 0 ) {
+
+            }
         }
     }
 }
