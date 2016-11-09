@@ -5,7 +5,7 @@ LDFLAGS=-lssl
 
 all: $(FILE)
 
-$(FILE).o: $(FILE).c
+$(FILE).o: $(FILE).cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(FILE): $(FILE).o
