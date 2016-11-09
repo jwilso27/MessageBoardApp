@@ -3,11 +3,8 @@
 // Programming Assignment 4
 // 11/14/16
 
-// include librraries
-#include <stdio.h>   
-#include <stdlib.h>  
+// include c libraries
 #include <unistd.h>
-#include <string.h>  
 #include <fcntl.h>
 #include <sys/types.h>   
 #include <sys/socket.h>  
@@ -15,10 +12,16 @@
 #include <sys/stat.h>
 #include <sys/errno.h>
 #include <bits/stat.h>
-#include <time.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>   
 #include <netdb.h>   
+
+// include c++ libraries
+#include <cstring>  
+#include <cstdlib>  
+#include <cstdio>   
+
+#include <iostream>
 
 #define MAX_LINE 4096 
 #define MAX_IN 256 
@@ -32,8 +35,6 @@ void string_recvfrom( int, char*, int, struct sockaddr_in* );
 void string_recv( int, char*, int );
 char* file_query( int, char*, char* );
 char* user_query( int, char*, struct sockaddr_in* );
-char* check_user( char* );
-void create_user( char*, char* );
 
 // sendto with error checking
 void my_sendto( int s, void* buf, size_t size, int flag, struct sockaddr_in* sin ) {
@@ -127,31 +128,4 @@ char* user_query( int s, char* info, struct sockaddr_in* sin ) {
     my_sendto( s, buf, len, 0, sin );
 
     return name;
-}
-
-// check if a user exists
-char* check_user( char* username ) {
-    FILE *fp;
-    char tmp[256], *passwd = NULL;
-
-    fp = fopen( "users.txt", "r" );
-    while ( !feof( fp ) ) {
-        fscanf( fp, "%s", &tmp );
-        if ( strcmp( tmp, username ) == 0 ) {
-            fscanf( fp, "%s", &passwd );
-            break;
-        }
-    }
-    fclose( fp );
-
-    return passwd;
-}
-
-// create user
-void create_user( char* username, char* passwd ) {
-    FILE *fp;
-
-    fp = fopen( "users.txt", "a" );
-    fprintf( fp, "%s %s\n", username, passwd );
-    fclose( fp );
 }

@@ -4,6 +4,12 @@
 // 11/14/16
 
 #include "../program4.h"
+#include "../board.h"
+
+#include <string>
+#include <map>
+
+using namespace std;
 
 #define MAX_PENDING 5   
 
@@ -15,6 +21,8 @@ int main(int argc, char * argv[]){
     int port, udp_s, tcp_s, new_tcp;
     int opt = 1, i, size = sizeof(struct sockaddr), flag = 1;
     short int len;
+    map< string, Board > boards;     
+    map< string, string > users;
 
     // check arguments
     if (argc == 3) {
@@ -82,10 +90,6 @@ int main(int argc, char * argv[]){
         exit(1);    
     }    
 
-    // initialize users.txt
-    fp = fopen( "users.txt", "w" );
-    fclose( fp );
-
     // main loop
     while (1) { // wait for tcp connection
         if ( ( new_tcp = accept( tcp_s, (struct sockaddr *)&tcp_sin, (socklen_t *)&size ) ) < 0 ) {   
@@ -95,18 +99,6 @@ int main(int argc, char * argv[]){
             exit(1);
         }
 
-/*        
-        // send acknowledgement
-        my_sendto( udp_s, &flag, sizeof(flag), 0, &udp_sin );
-
-        // if tcp connection doesn't accept
-        if ( !flag ) {
-            close( udp_s );           
-            close( tcp_s );           
-            continue;
-        }
-*/
-
         // user authentication
         do {
             // get user info from client
@@ -114,21 +106,18 @@ int main(int argc, char * argv[]){
             username = strdup( buf );
             
             // check if user exists and send confirmation
-            if ( ( passwd = check_user( username ) ) == NULL ) flag = 0;
+            flag = users.count( username );
             my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
             
-            // get password from client
-            if ( !flag ) {
-                string_recvfrom( udp_s, buf, 0, &client_addr );
-                passwd = strdup( buf );
-                create_user( username, passwd );
-            } else {
-                // get password
-                string_recvfrom( udp_s, buf, 0, &client_addr );
-                input_passwd = strdup( buf );
+            // recv passwd
+            string_recvfrom( udp_s, buf, 0, &client_addr );
+            input_passwd = strdup( buf );
 
+            // handle password
+            if ( !flag ) users[ username ] = input_passwd;
+            else {
                 // check if password is correct
-                flag = strcmp( input_passwd, passwd );
+                if ( users[ username ].compare( input_passwd ) == 0 ) flag = 0;
 
                 // send confirmation to client
                 my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );

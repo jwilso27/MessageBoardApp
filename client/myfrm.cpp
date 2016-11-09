@@ -60,20 +60,6 @@ int main(int argc, char * argv[]){
         exit(1);
     }   
 
-/*
-    // get acknowledgement from server
-    my_recvfrom( udp_s, &flag, sizeof(flag), 0, &server_addr );
-    printf("recvd ack\n");
-
-    
-    // if negative acknowledgement
-    if ( !flag ) {
-        close( udp_s );
-        close( tcp_s );
-        exit(1);
-    }
-*/
-
     // user authentication
     do {
         // get username and send to server
