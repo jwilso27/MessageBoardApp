@@ -181,10 +181,6 @@ int main(int argc, char * argv[]){
             	cout << "user said DWN" << endl;
             } else if ( strncmp( cmd, "DST", 3 ) == 0 ) {
             	cout << "user said DST" << endl;
-            } else if ( strncmp( cmd, "XIT", 3 ) == 0 ) {
-            	cout << "user said XIT" << endl;
-            } else if ( strncmp( cmd, "SHT", 3 ) == 0 ) {
-            	cout << "user said SHT" << endl;
                 // get board name
                 string_recvfrom( udp_s, buf, 0, &client_addr );
 
@@ -200,8 +196,10 @@ int main(int argc, char * argv[]){
                 my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
 
             } else if ( strncmp( cmd, "SHT", 3 ) == 0 ) {
+                cout << "user said SHT" << endl;
 
             } else if ( strncmp( cmd, "XIT", 3 ) == 0 ) {
+                cout << "user saif XIT" << endl;
                 close( new_tcp );
                 break;
             }
