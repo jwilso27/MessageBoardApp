@@ -197,7 +197,32 @@ int main(int argc, char * argv[]){
 
             } else if ( strncmp( cmd, "SHT", 3 ) == 0 ) {
                 cout << "user said SHT" << endl;
+                // recv passwd
+                string_recvfrom( udp_s, buf, 0, &client_addr );
+                input_passwd = strdup( buf );
 
+                // check if password is correct
+                if ( strcmp( admin_passwd, input_passwd ) != 0 ) flag = 0;
+
+                // send confirmation
+                my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
+
+                if ( flag ) {
+                    // wait for client to close session
+                    my_recvfrom( udp_s, &flag, sizeof(flag), 0, &client_addr );
+
+                    // destroy boards
+                    for ( auto it = boards.begin(); it != boards.end(); it++ ) 
+                        it->second.destroy();
+
+                    // close sockets
+                    close( new_tcp );
+                    close( tcp_s );
+                    close( udp_s );
+
+                    return 0;
+                }
+                    
             } else if ( strncmp( cmd, "XIT", 3 ) == 0 ) {
                 cout << "user saif XIT" << endl;
                 close( new_tcp );

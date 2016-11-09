@@ -163,11 +163,27 @@ int main(int argc, char * argv[]){
             else cout << "Board was successfully destroyed" << endl;
 
         } else if ( strncmp( cmd, "SHT", 3 ) == 0 ) {
+            // get password
+            passwd = user_query( udp_s, "Admin Password", &server_addr );
+
+            // get confirmation
+            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &server_addr );
+
+            // handle confirmation
+            if ( flag == 0 ) {
+                cout << "Permission denied: ";
+                cout << "incorrect admin password";
+                cout << endl;
+            } else {
+                // send acknowledgement to prevent server shutdown
+                // before client closes sockets
+                my_sendto( udp_s, &flag, sizeof(flag), 0, &server_addr );
+                break;
+            }
 
         } else if ( strncmp( cmd, "XIT", 3 ) == 0 ) break;
         else cout << "Invalid operation" << endl;
     }
-
     close( udp_s );
     close( tcp_s );
     cout << "The session has been closed" << endl;
