@@ -19,8 +19,7 @@ int main(int argc, char * argv[]){
     struct sockaddr_in udp_sin, tcp_sin, client_addr;
     char cmd[4], buf[MAX_LINE], *username, *input_passwd, *passwd, *admin_passwd;
     int port, udp_s, tcp_s, new_tcp;
-    int opt = 1, size = sizeof(struct sockaddr), flag = 1;
-    short int len;
+    int opt = 1, size = sizeof(struct sockaddr), flag = 1, len;
     map< string, Board > boards;     
     map< string, string > users;
 
@@ -133,6 +132,7 @@ int main(int argc, char * argv[]){
 
             // reset other parameters
             flag = 1;
+            len = 0;
 
             // receive command from client
             my_recvfrom( udp_s, cmd, sizeof(cmd), 0, &client_addr );
@@ -143,11 +143,16 @@ int main(int argc, char * argv[]){
             } else if ( strncmp( cmd, "LIS", 3 ) == 0 ) {
                 // get list of boards in buf
                 for ( auto it = boards.begin(); it != boards.end(); it++ ) {
+                    len += ( it->first.length() + 1 );
                     strcat( buf, it->first.c_str() );
                     strcat( buf, "\n" );
                 }
 
+                // send buf len
+                my_sendto( udp_s, &len, sizeof(len), 0, &client_addr );
+
                 // send buf
+                my_sendto( udp_s, buf, len, 0, &client_addr );
 
             } else if ( strncmp( cmd, "MSG", 3 ) == 0 ) {
 

@@ -5,6 +5,8 @@
 
 #include "../program4.h"
 
+using namespace std;
+
 int main(int argc, char * argv[]){
     // initialize parameters
     FILE *fp;
@@ -115,6 +117,11 @@ int main(int argc, char * argv[]){
         if ( strncmp( cmd, "CRT", 3 ) == 0 ) {
 
         } else if ( strncmp( cmd, "LIS", 3 ) == 0 ) {
+            // recv list of boards
+            string_recvfrom( udp_s, buf, 0, &server_addr );
+
+            // print list
+            cout << buf << endl;
 
         } else if ( strncmp( cmd, "MSG", 3 ) == 0 ) {
 
