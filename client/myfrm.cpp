@@ -12,7 +12,7 @@ int main(int argc, char * argv[]){
     FILE *fp;
     struct hostent *hp;
     struct sockaddr_in udp_sin, tcp_sin, server_addr;
-    char *host, *username, *passwd, buf[MAX_LINE], cmd[4];
+    char *host, *username, *passwd, *board, buf[MAX_LINE], cmd[4];
     int port, udp_s, tcp_s, size, i, flag = 1;
 
     // check arguments
@@ -115,6 +115,15 @@ int main(int argc, char * argv[]){
 
         // handle command
         if ( strncmp( cmd, "CRT", 3 ) == 0 ) {
+            // get and send board name
+            board = user_query( udp_s, "Name of board to create", &server_addr );
+
+            // get confirmation
+            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &server_addr );
+
+            if ( flag == -1 ) cout << "Board already exists" << endl;
+            else if ( flag ) cout << "Board successfully created" << endl;
+            else cout << "Board was not able to be created" << endl;
 
         } else if ( strncmp( cmd, "LIS", 3 ) == 0 ) {
             // recv list of boards

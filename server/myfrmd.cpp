@@ -20,6 +20,7 @@ int main(int argc, char * argv[]){
     char cmd[4], buf[MAX_LINE], *username, *input_passwd, *passwd, *admin_passwd;
     int port, udp_s, tcp_s, new_tcp;
     int opt = 1, size = sizeof(struct sockaddr), flag = 1, len;
+    Board tmp;
     map< string, Board > boards;     
     map< string, string > users;
 
@@ -139,6 +140,18 @@ int main(int argc, char * argv[]){
 
             // handle command
             if ( strncmp( cmd, "CRT", 3 ) == 0 ) {
+                // get board name
+                string_recvfrom( udp_s, buf, 0, &client_addr );
+
+                // check if board exists already
+                if ( boards.count( buf ) ) flag = -1;
+                else {
+                    flag = tmp.crtBoard( username, buf );
+                    boards[ buf ] = tmp;
+                }
+
+                // send confirmation
+                my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
 
             } else if ( strncmp( cmd, "LIS", 3 ) == 0 ) {
                 // get list of boards in buf

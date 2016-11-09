@@ -13,7 +13,7 @@ $(FILE).o: $(FILE).cpp
 	$(CC) $(CFLAGS) -c $(FILE).cpp -o $@
 
 $(FILE): $(FILE).o $(CLASS).o
-	$(CC) $? -o $@
+	$(CC) $(FILE).o $(CLASS).o -o $@
 
 clean:
-	rm $(FILE) $(FILE).o $(CLASS).o
+	rm $(FILE) $(FILE).o
