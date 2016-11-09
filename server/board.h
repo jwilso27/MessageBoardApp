@@ -23,7 +23,7 @@ class Board {
         int dltMsg( string, int );
         int edtMsg( string, int, string );
         int apnFile( string, string );
-        int destroy( string );
+        int destroy();
     private:
         int writeBoard();
         string name;

@@ -121,6 +121,7 @@ int main(int argc, char * argv[]){
             // get confirmation
             my_recvfrom( udp_s, &flag, sizeof(flag), 0, &server_addr );
 
+            // handle confirmation
             if ( flag == -1 ) cout << "Board already exists" << endl;
             else if ( flag ) cout << "Board successfully created" << endl;
             else cout << "Board was not able to be created" << endl;
@@ -145,6 +146,20 @@ int main(int argc, char * argv[]){
         } else if ( strncmp( cmd, "DWN", 3 ) == 0 ) {
 
         } else if ( strncmp( cmd, "DST", 3 ) == 0 ) {
+            // get and send board name
+            board = user_query( udp_s, "Name of board to destroy", &server_addr );
+
+            // get confirmation
+            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &server_addr );
+
+            // handle confirmation
+            if ( flag == -2 ) {
+                cout << "Permission denied: ";
+                cout << "only the board's creator can destroy the board";
+                cout << endl;
+            } else if ( flag == -1 ) cout << "Board does not exist" << endl;
+            else if ( flag == 0 ) cout << "Board could not be destroyed" << endl;
+            else cout << "Board was successfully destroyed" << endl;
 
         } else if ( strncmp( cmd, "XIT", 3 ) == 0 ) {
 
