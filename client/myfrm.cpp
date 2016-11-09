@@ -161,11 +161,14 @@ int main(int argc, char * argv[]){
             else if ( flag == 0 ) cout << "Board could not be destroyed" << endl;
             else cout << "Board was successfully destroyed" << endl;
 
-        } else if ( strncmp( cmd, "XIT", 3 ) == 0 ) {
-
         } else if ( strncmp( cmd, "SHT", 3 ) == 0 ) {
 
-        } else printf("Invalid operation\n");
+        } else if ( strncmp( cmd, "XIT", 3 ) == 0 ) break;
+        else cout << "Invalid operation" << endl;
     }
 
+    close( udp_s );
+    close( tcp_s );
+    cout << "The session has been closed" << endl;
+    return 0;
 }

@@ -194,10 +194,11 @@ int main(int argc, char * argv[]){
                 // send confirmation
                 my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
 
-            } else if ( strncmp( cmd, "XIT", 3 ) == 0 ) {
-
             } else if ( strncmp( cmd, "SHT", 3 ) == 0 ) {
 
+            } else if ( strncmp( cmd, "XIT", 3 ) == 0 ) {
+                close( new_tcp );
+                break;
             }
         }
     }
