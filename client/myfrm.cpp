@@ -108,7 +108,7 @@ int main(int argc, char * argv[]){
                 "\tXIT: exit\n"
                 "\tSHT: shutdown server\n"
         );
-        scanf( "%s", buf );
+        scanf( "%s", cmd );
 
         // send command to server
         my_sendto( udp_s, cmd, sizeof(cmd), 0, &server_addr );
