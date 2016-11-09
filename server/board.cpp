@@ -90,13 +90,13 @@ int Board::apnFile( string user, string file ) {
 }
 
 // destroys board files
-int Board::destroy( string user ) {
+int Board::destroy() {
     // delete attachments
     for ( int i = 0; i < attachments.size(); i++ )
         if ( unlink( name.append( "-" ).append( attachments[i].second ).c_str() ) != 0 ) return 0;
 
     // delete board file
-    if ( unlink( file.c_str() ) != 0 ) return -1;
+    if ( unlink( file.c_str() ) != 0 ) return 0;
 
     return 1;
 }

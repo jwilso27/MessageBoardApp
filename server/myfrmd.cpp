@@ -185,6 +185,25 @@ int main(int argc, char * argv[]){
             	cout << "user said XIT" << endl;
             } else if ( strncmp( cmd, "SHT", 3 ) == 0 ) {
             	cout << "user said SHT" << endl;
+                // get board name
+                string_recvfrom( udp_s, buf, 0, &client_addr );
+
+                // check if board exists
+                if ( !boards.count( buf ) ) flag = -1;
+                else {
+                    tmp = boards[ buf ];
+                    if ( tmp.getCreator().compare( username ) == 0 ) flag = tmp.destroy();
+                    else flag = -2;
+                }
+
+                // send confirmation
+                my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
+
+            } else if ( strncmp( cmd, "SHT", 3 ) == 0 ) {
+
+            } else if ( strncmp( cmd, "XIT", 3 ) == 0 ) {
+                close( new_tcp );
+                break;
             }
         }
     }
