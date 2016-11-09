@@ -4,7 +4,7 @@
 // 11/14/16
 
 #include "../program4.h"
-#include "../board.h"
+#include "board.h"
 
 #include <string>
 #include <map>
@@ -134,7 +134,6 @@ int main(int argc, char * argv[]){
 
             // receive command from client
             my_recvfrom( udp_s, buf, sizeof(buf), 0, &client_addr );
-            printf("%s\n",buf);
 
             // handle command
             if ( strncmp( buf, "CRT", 3 ) == 0 ) {
