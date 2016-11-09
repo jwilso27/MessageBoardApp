@@ -168,23 +168,23 @@ int main(int argc, char * argv[]){
                 my_sendto( udp_s, buf, len, 0, &client_addr );
 
             } else if ( strncmp( cmd, "MSG", 3 ) == 0 ) {
-
+            	cout << "user said MSG" << endl;
             } else if ( strncmp( cmd, "DLT", 3 ) == 0 ) {
-
+            	cout << "user said DLT" << endl;
             } else if ( strncmp( cmd, "RDB", 3 ) == 0 ) {
-
+            	cout << "user said RDB" << endl;
             } else if ( strncmp( cmd, "EDT", 3 ) == 0 ) {
-
+            	cout << "user said EDT" << endl;
             } else if ( strncmp( cmd, "APN", 3 ) == 0 ) {
-
+            	cout << "user said APN" << endl;
             } else if ( strncmp( cmd, "DWN", 3 ) == 0 ) {
-
+            	cout << "user said DWN" << endl;
             } else if ( strncmp( cmd, "DST", 3 ) == 0 ) {
-
+            	cout << "user said DST" << endl;
             } else if ( strncmp( cmd, "XIT", 3 ) == 0 ) {
-
+            	cout << "user said XIT" << endl;
             } else if ( strncmp( cmd, "SHT", 3 ) == 0 ) {
-
+            	cout << "user said SHT" << endl;
             }
         }
     }

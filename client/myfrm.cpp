@@ -109,6 +109,7 @@ int main(int argc, char * argv[]){
                 "\tSHT: shutdown server\n"
         );
         scanf( "%s", cmd );
+        cout << "you entered:" << cmd << endl;
 
         // send command to server
         my_sendto( udp_s, cmd, sizeof(cmd), 0, &server_addr );
