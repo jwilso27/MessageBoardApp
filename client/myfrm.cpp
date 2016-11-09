@@ -10,7 +10,7 @@ int main(int argc, char * argv[]){
     FILE *fp;
     struct hostent *hp;
     struct sockaddr_in udp_sin, tcp_sin, server_addr;
-    char *host, *username, *passwd, buf[MAX_LINE];
+    char *host, *username, *passwd, buf[MAX_LINE], cmd[4];
     int port, udp_s, tcp_s, size, i, flag = 1;
 
     // check arguments
@@ -84,8 +84,9 @@ int main(int argc, char * argv[]){
     
     // handle user operation
     while (1) {
-        // clear buf
+        // clear buffers
         bzero( buf, sizeof(buf) );
+        bzero( cmd, sizeof(cmd) );
 
         // reset other parameters
         flag = 1;
@@ -108,29 +109,30 @@ int main(int argc, char * argv[]){
         scanf( "%s", buf );
 
         // send command to server
-        my_sendto( udp_s, buf, 4, 0, &server_addr );
+        my_sendto( udp_s, cmd, sizeof(cmd), 0, &server_addr );
 
-        if ( strncmp( buf, "CRT", 3 ) == 0 ) {
+        // handle command
+        if ( strncmp( cmd, "CRT", 3 ) == 0 ) {
 
-        } else if ( strncmp( buf, "LIS", 3 ) == 0 ) {
+        } else if ( strncmp( cmd, "LIS", 3 ) == 0 ) {
 
-        } else if ( strncmp( buf, "MSG", 3 ) == 0 ) {
+        } else if ( strncmp( cmd, "MSG", 3 ) == 0 ) {
 
-        } else if ( strncmp( buf, "DLT", 3 ) == 0 ) {
+        } else if ( strncmp( cmd, "DLT", 3 ) == 0 ) {
 
-        } else if ( strncmp( buf, "RDB", 3 ) == 0 ) {
+        } else if ( strncmp( cmd, "RDB", 3 ) == 0 ) {
 
-        } else if ( strncmp( buf, "EDT", 3 ) == 0 ) {
+        } else if ( strncmp( cmd, "EDT", 3 ) == 0 ) {
 
-        } else if ( strncmp( buf, "APN", 3 ) == 0 ) {
+        } else if ( strncmp( cmd, "APN", 3 ) == 0 ) {
 
-        } else if ( strncmp( buf, "DWN", 3 ) == 0 ) {
+        } else if ( strncmp( cmd, "DWN", 3 ) == 0 ) {
 
-        } else if ( strncmp( buf, "DST", 3 ) == 0 ) {
+        } else if ( strncmp( cmd, "DST", 3 ) == 0 ) {
 
-        } else if ( strncmp( buf, "XIT", 3 ) == 0 ) {
+        } else if ( strncmp( cmd, "XIT", 3 ) == 0 ) {
 
-        } else if ( strncmp( buf, "SHT", 3 ) == 0 ) {
+        } else if ( strncmp( cmd, "SHT", 3 ) == 0 ) {
 
         } else printf("Invalid operation\n");
     }

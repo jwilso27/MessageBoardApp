@@ -17,9 +17,9 @@ int main(int argc, char * argv[]){
     // initialize parameters
     FILE *fp;
     struct sockaddr_in udp_sin, tcp_sin, client_addr;
-    char buf[MAX_LINE], *username, *input_passwd, *passwd, *admin_passwd;
+    char cmd[4], buf[MAX_LINE], *username, *input_passwd, *passwd, *admin_passwd;
     int port, udp_s, tcp_s, new_tcp;
-    int opt = 1, i, size = sizeof(struct sockaddr), flag = 1;
+    int opt = 1, size = sizeof(struct sockaddr), flag = 1;
     short int len;
     map< string, Board > boards;     
     map< string, string > users;
@@ -117,7 +117,8 @@ int main(int argc, char * argv[]){
             if ( !flag ) users[ username ] = input_passwd;
             else {
                 // check if password is correct
-                if ( users[ username ].compare( input_passwd ) == 0 ) flag = 0;
+                if ( users[ username ].compare( input_passwd ) == 0 )
+                    flag = 0;
 
                 // send confirmation to client
                 my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
@@ -126,37 +127,45 @@ int main(int argc, char * argv[]){
 
         // wait for operation from client
         while (1) { 
-            // clear buf
+            // clear buffers
             bzero( buf, sizeof(buf) ); 
+            bzero( cmd, sizeof(cmd) ); 
 
             // reset other parameters
             flag = 1;
 
             // receive command from client
-            my_recvfrom( udp_s, buf, sizeof(buf), 0, &client_addr );
+            my_recvfrom( udp_s, cmd, sizeof(cmd), 0, &client_addr );
 
             // handle command
-            if ( strncmp( buf, "CRT", 3 ) == 0 ) {
+            if ( strncmp( cmd, "CRT", 3 ) == 0 ) {
 
-            } else if ( strncmp( buf, "LIS", 3 ) == 0 ) {
+            } else if ( strncmp( cmd, "LIS", 3 ) == 0 ) {
+                // get list of boards in buf
+                for ( auto it = boards.begin(); it != boards.end(); it++ ) {
+                    strcat( buf, it->first.c_str() );
+                    strcat( buf, "\n" );
+                }
 
-            } else if ( strncmp( buf, "MSG", 3 ) == 0 ) {
+                // send buf
 
-            } else if ( strncmp( buf, "DLT", 3 ) == 0 ) {
+            } else if ( strncmp( cmd, "MSG", 3 ) == 0 ) {
 
-            } else if ( strncmp( buf, "RDB", 3 ) == 0 ) {
+            } else if ( strncmp( cmd, "DLT", 3 ) == 0 ) {
 
-            } else if ( strncmp( buf, "EDT", 3 ) == 0 ) {
+            } else if ( strncmp( cmd, "RDB", 3 ) == 0 ) {
 
-            } else if ( strncmp( buf, "APN", 3 ) == 0 ) {
+            } else if ( strncmp( cmd, "EDT", 3 ) == 0 ) {
 
-            } else if ( strncmp( buf, "DWN", 3 ) == 0 ) {
+            } else if ( strncmp( cmd, "APN", 3 ) == 0 ) {
 
-            } else if ( strncmp( buf, "DST", 3 ) == 0 ) {
+            } else if ( strncmp( cmd, "DWN", 3 ) == 0 ) {
 
-            } else if ( strncmp( buf, "XIT", 3 ) == 0 ) {
+            } else if ( strncmp( cmd, "DST", 3 ) == 0 ) {
 
-            } else if ( strncmp( buf, "SHT", 3 ) == 0 ) {
+            } else if ( strncmp( cmd, "XIT", 3 ) == 0 ) {
+
+            } else if ( strncmp( cmd, "SHT", 3 ) == 0 ) {
 
             }
         }
