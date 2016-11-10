@@ -33,8 +33,8 @@ void my_send( int, void*, size_t, int );
 void my_recv( int, void*, size_t, int );
 void string_recvfrom( int, char*, int, struct sockaddr_in* );
 void string_recv( int, char*, int );
-char* file_query( int, char*, char* );
-char* user_query( int, char*, struct sockaddr_in* );
+void cmd_query( int, char*, char*, struct sockaddr_in* );
+void user_query( int, char*, struct sockaddr_in* );
 
 // sendto with error checking
 void my_sendto( int s, void* buf, size_t size, int flag, struct sockaddr_in* sin ) {
@@ -95,7 +95,7 @@ void string_recvfrom( int s, char* buf, int flag, struct sockaddr_in* sin ) {
 }
 
 // get file info from user
-char* file_query( int s, char* type, char* op ) {
+void cmd_query( int s, char* type, char* op, struct sockaddr_in* sin ) {
     short int len;
     char *name, buf[256];
 
@@ -106,14 +106,12 @@ char* file_query( int s, char* type, char* op ) {
     len = strlen( buf ) + 1;
 
     // send file info to server
-    my_send( s, &len, sizeof(short int), 0 ); 
-    my_send( s, buf, len, 0 );
-
-    return name;
+    my_sendto( s, &len, sizeof(short int), 0, sin ); 
+    my_sendto( s, buf, len, 0, sin );
 }
 
 // get user info
-char* user_query( int s, char* info, struct sockaddr_in* sin ) {
+void user_query( int s, char* info, struct sockaddr_in* sin ) {
     short int len;
     char *name, buf[256];
 
@@ -126,6 +124,4 @@ char* user_query( int s, char* info, struct sockaddr_in* sin ) {
     // send file info to server
     my_sendto( s, &len, sizeof(short int), 0, sin); 
     my_sendto( s, buf, len, 0, sin );
-
-    return name;
 }

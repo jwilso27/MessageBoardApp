@@ -17,9 +17,9 @@ int main(int argc, char * argv[]){
     // initialize parameters
     FILE *fp;
     struct sockaddr_in udp_sin, tcp_sin, client_addr;
-    char cmd[4], buf[MAX_LINE], *username, *input_passwd, *passwd, *admin_passwd;
+    char cmd[4], buf[MAX_LINE], *username, *input_passwd, *passwd, *admin_passwd, *board;
     int port, udp_s, tcp_s, new_tcp;
-    int opt = 1, size = sizeof(struct sockaddr), flag = 1, len;
+    int opt = 1, size = sizeof(struct sockaddr), tmp_size, flag = 1, len;
     Board tmp;
     map< string, Board > boards;     
     map< string, string > users;
@@ -117,7 +117,7 @@ int main(int argc, char * argv[]){
             if ( !flag ) users[ username ] = input_passwd;
             else {
                 // check if password is correct
-                if ( users[ username ].compare( input_passwd ) == 0 )
+                if ( strcmp( users[ username ].c_str(), input_passwd ) == 0 )
                     flag = 0;
 
                 // send confirmation to client
@@ -134,6 +134,7 @@ int main(int argc, char * argv[]){
             // reset other parameters
             flag = 1;
             len = 0;
+            tmp_size = 0;
 
             // receive command from client
             my_recvfrom( udp_s, cmd, sizeof(cmd), 0, &client_addr );
@@ -142,12 +143,13 @@ int main(int argc, char * argv[]){
             if ( strncmp( cmd, "CRT", 3 ) == 0 ) {
                 // get board name
                 string_recvfrom( udp_s, buf, 0, &client_addr );
+                board = strdup( buf );
 
                 // check if board exists already
-                if ( boards.count( buf ) ) flag = -1;
+                if ( boards.count( board ) ) flag = -1;
                 else {
-                    flag = tmp.crtBoard( username, buf );
-                    boards[ buf ] = tmp;
+                    flag = tmp.create( username, buf );
+                    boards[ board ] = tmp;
                 }
 
                 // send confirmation
@@ -159,7 +161,9 @@ int main(int argc, char * argv[]){
                     len += ( it->first.length() + 1 );
                     strcat( buf, it->first.c_str() );
                     strcat( buf, "\n" );
+                    cout << buf << endl;
                 }
+                len++; // accout for null char
 
                 // send buf len
                 my_sendto( udp_s, &len, sizeof(len), 0, &client_addr );
@@ -168,19 +172,58 @@ int main(int argc, char * argv[]){
                 my_sendto( udp_s, buf, len, 0, &client_addr );
 
             } else if ( strncmp( cmd, "MSG", 3 ) == 0 ) {
-            	cout << "user said MSG" << endl;
+                // get board name
+                string_recvfrom( udp_s, buf, 0, &client_addr );
+                board = strdup( buf );
+
+                // get message
+                string_recvfrom( udp_s, buf, 0, &client_addr );
+
+                // check if board exists
+                if ( boards.count( board ) == 0 ) flag = -1;
+                else flag = boards[ board ].addMsg( username, buf );
+
+                // send confirmation
+                my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
+            	
             } else if ( strncmp( cmd, "DLT", 3 ) == 0 ) {
-            	cout << "user said DLT" << endl;
-            } else if ( strncmp( cmd, "RDB", 3 ) == 0 ) {
-            	cout << "user said RDB" << endl;
+
             } else if ( strncmp( cmd, "EDT", 3 ) == 0 ) {
-            	cout << "user said EDT" << endl;
+
+            } else if ( strncmp( cmd, "RDB", 3 ) == 0 ) {
+                // get board name
+                string_recvfrom( udp_s, buf, 0, &client_addr );
+                board = strdup( buf );
+
+                // check if board exists
+                if ( boards.count( board ) == 0 ) flag = -1;
+                else flag = boards[ board ].getFilesize();
+
+                // send filesize
+                my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
+            	
+                // handle file transfer
+                if ( flag == -1 ) continue;
+                else {
+                    // open board file
+                    ifstream ifs;
+                    ifs.open( boards[ board ].getFile() );
+
+                    // send contents of board file to client
+                    do {
+                        bzero( buf, sizeof(buf) );
+                        len = ifs.rdbuf()->sgetn( buf, MAX_LINE );
+                        my_send( new_tcp, buf, len, 0 );
+                    } while ( ( tmp_size += len ) < flag );
+
+                    ifs.close();
+                }
+
             } else if ( strncmp( cmd, "APN", 3 ) == 0 ) {
-            	cout << "user said APN" << endl;
+
             } else if ( strncmp( cmd, "DWN", 3 ) == 0 ) {
-            	cout << "user said DWN" << endl;
+
             } else if ( strncmp( cmd, "DST", 3 ) == 0 ) {
-            	cout << "user said DST" << endl;
                 // get board name
                 string_recvfrom( udp_s, buf, 0, &client_addr );
 
@@ -188,15 +231,16 @@ int main(int argc, char * argv[]){
                 if ( !boards.count( buf ) ) flag = -1;
                 else {
                     tmp = boards[ buf ];
-                    if ( tmp.getCreator().compare( username ) == 0 ) flag = tmp.destroy();
-                    else flag = -2;
+                    if ( strcmp( tmp.getCreator().c_str(), username ) == 0 ) {
+                        flag = tmp.destroy();
+                        boards.erase( buf );
+                    } else flag = -2;
                 }
 
                 // send confirmation
                 my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
 
             } else if ( strncmp( cmd, "SHT", 3 ) == 0 ) {
-                cout << "user said SHT" << endl;
                 // recv passwd
                 string_recvfrom( udp_s, buf, 0, &client_addr );
                 input_passwd = strdup( buf );
@@ -224,7 +268,6 @@ int main(int argc, char * argv[]){
                 }
                     
             } else if ( strncmp( cmd, "XIT", 3 ) == 0 ) {
-                cout << "user saif XIT" << endl;
                 close( new_tcp );
                 break;
             }

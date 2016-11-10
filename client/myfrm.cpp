@@ -11,9 +11,9 @@ int main(int argc, char * argv[]){
     // initialize parameters
     FILE *fp;
     struct hostent *hp;
-    struct sockaddr_in udp_sin, tcp_sin, server_addr;
+    struct sockaddr_in udp_sin, tcp_sin;
     char *host, *username, *passwd, *board, buf[MAX_LINE], cmd[4];
-    int port, udp_s, tcp_s, size, i, flag = 1;
+    int port, udp_s, tcp_s, len, size = 0, i, flag = 1;
 
     // check arguments
     if (argc == 3) {
@@ -65,19 +65,19 @@ int main(int argc, char * argv[]){
     // user authentication
     do {
         // get username and send to server
-        username = user_query( udp_s, "Username", &udp_sin );
+        user_query( udp_s, "Username", &udp_sin );
 
         // get if user exists 
-        my_recvfrom( udp_s, &flag, sizeof(flag), 0, &server_addr );
+        my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
 
         // get password and send to server
-        if ( !flag ) passwd = user_query( udp_s, "Create Password", &server_addr );
+        if ( !flag ) user_query( udp_s, "Create Password", &udp_sin );
         else {
             // get password
-            passwd = user_query( udp_s, "Password", &server_addr );
+            user_query( udp_s, "Password", &udp_sin );
 
             // recv whether password is correct
-            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &server_addr );
+            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
 
             // prompt if password is incorrect
             if ( flag ) printf("Incorrect password\n");
@@ -109,38 +109,77 @@ int main(int argc, char * argv[]){
                 "\tSHT: shutdown server\n"
         );
         scanf( "%s", cmd );
-        cout << "you entered:" << cmd << endl;
 
         // send command to server
-        my_sendto( udp_s, cmd, sizeof(cmd), 0, &server_addr );
+        my_sendto( udp_s, cmd, sizeof(cmd), 0, &udp_sin );
 
         // handle command
         if ( strncmp( cmd, "CRT", 3 ) == 0 ) {
             // get and send board name
-            board = user_query( udp_s, "Name of board to create", &server_addr );
+            cmd_query( udp_s, "is the name of the board that", "create", &udp_sin );
 
             // get confirmation
-            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &server_addr );
+            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
 
             // handle confirmation
-            if ( flag == -1 ) cout << "Board already exists" << endl;
-            else if ( flag ) cout << "Board successfully created" << endl;
-            else cout << "Board was not able to be created" << endl;
+            if ( flag ) cout << "Board successfully created" << endl;
+            else {
+                cout << "Board was not able to be created" << endl;
+                if ( flag == -1 ) cout << "(Board already exists)" << endl;
+            }
 
         } else if ( strncmp( cmd, "LIS", 3 ) == 0 ) {
             // recv list of boards
-            string_recvfrom( udp_s, buf, 0, &server_addr );
+            string_recvfrom( udp_s, buf, 0, &udp_sin );
 
             // print list
-            cout << buf << endl;
+            cout << "\n" << buf << endl;
 
         } else if ( strncmp( cmd, "MSG", 3 ) == 0 ) {
+            // get and send board name
+            cmd_query( udp_s, "board", "leave a message on", &udp_sin );
+
+            // get and send message
+            cmd_query( udp_s, "message", "leave", &udp_sin );
+
+            // get confirmation
+            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
+
+            // handle confirmation
+            if ( flag == -1 ) cout << "Board does not exist" << endl;
+            else if ( flag == 0 ) cout << "Message could not be added to board" << endl;
+            else cout << "Message was successfully added to board" << endl;
 
         } else if ( strncmp( cmd, "DLT", 3 ) == 0 ) {
 
-        } else if ( strncmp( cmd, "RDB", 3 ) == 0 ) {
-
         } else if ( strncmp( cmd, "EDT", 3 ) == 0 ) {
+
+        } else if ( strncmp( cmd, "RDB", 3 ) == 0 ) {
+            // get and send board name
+            cmd_query( udp_s, "board", "read", &udp_sin );
+
+            // get filesize
+            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
+
+            // handle file transfer
+            if ( flag == -1 ) {
+                cout << "Board does not exist" << endl;
+                continue;
+            } else {
+                cout << endl;
+                do {
+                    bzero( buf, sizeof(buf) );
+                    if ( flag - size < sizeof(buf) )
+                        len = recv( tcp_s, buf, ( flag - size ), 0 );
+                    else len = recv( tcp_s, buf, sizeof(buf), 0 );
+                    if ( len == -1 ) {
+                        perror("receive error");
+                        exit(1);
+                    }
+                    cout << buf;
+                } while ( ( size += len ) < size );
+                cout << endl;
+            }
 
         } else if ( strncmp( cmd, "APN", 3 ) == 0 ) {
 
@@ -148,10 +187,10 @@ int main(int argc, char * argv[]){
 
         } else if ( strncmp( cmd, "DST", 3 ) == 0 ) {
             // get and send board name
-            board = user_query( udp_s, "Name of board to destroy", &server_addr );
+            cmd_query( udp_s, "board", "destroy", &udp_sin );
 
             // get confirmation
-            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &server_addr );
+            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
 
             // handle confirmation
             if ( flag == -2 ) {
@@ -164,10 +203,10 @@ int main(int argc, char * argv[]){
 
         } else if ( strncmp( cmd, "SHT", 3 ) == 0 ) {
             // get password
-            passwd = user_query( udp_s, "Admin Password", &server_addr );
+            user_query( udp_s, "Admin Password", &udp_sin );
 
             // get confirmation
-            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &server_addr );
+            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
 
             // handle confirmation
             if ( flag == 0 ) {
@@ -177,7 +216,7 @@ int main(int argc, char * argv[]){
             } else {
                 // send acknowledgement to prevent server shutdown
                 // before client closes sockets
-                my_sendto( udp_s, &flag, sizeof(flag), 0, &server_addr );
+                my_sendto( udp_s, &flag, sizeof(flag), 0, &udp_sin );
                 break;
             }
 

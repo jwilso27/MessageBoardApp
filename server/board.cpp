@@ -5,9 +5,6 @@
 
 #include <unistd.h>
 
-#include <iostream>
-#include <fstream>
-
 #include "board.h"
 
 // constructor
@@ -16,9 +13,9 @@ Board::Board() {}
 // destructor
 Board::~Board() {}
 
-// returns name of the board
-string Board::getName() {
-    return name;
+// returns board file name
+string Board::getFile() {
+    return file;
 }
 
 // returns creator's username
@@ -36,8 +33,13 @@ vector< pair< string, string > > Board::getAttachments() {
     return attachments;
 }
 
+// returns size of board file
+int Board::getFilesize() {
+    return filesize;
+}
+
 // initialize board
-int Board::crtBoard( string u, string n ) {
+int Board::create( string u, string n ) {
     // define variables
     creator = u;
     name = n;
@@ -103,27 +105,29 @@ int Board::destroy() {
 
 // write board file
 int Board::writeBoard() {
-    // open file for board and clear it
-    ofstream ofs;
-    ofs.open( file, ofstream::out | ofstream::trunc );
-    if ( !ofs ) return 0;
+    // open board file and clear it
+    fstream fs;
+    fs.open( file, fstream::in | fstream::out | fstream::trunc );
+    if ( !fs ) return 0;
 
     // write creator of board
-    ofs << creator << endl;
+    fs << creator << endl;
 
     // write messages
     for ( int i = 0; i < messages.size(); i++ ) {
-        ofs << messages[i].second;
-        ofs << " - " << messages[i].first << endl;
+        fs << messages[i].second;
+        fs << " - " << messages[i].first << endl;
     }
 
     // write attachments
     for ( int i = 0; i < attachments.size(); i++ ) {
-        ofs << attachments[i].second;
-        ofs << " (attachment) - " << attachments[i].first << endl;
+        fs << attachments[i].second;
+        fs << " (attachment) - " << attachments[i].first << endl;
     }
 
-    ofs.close();
+    filesize = fs.tellg();
+
+    fs.close();
 
     return 1;
 }

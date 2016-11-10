@@ -7,6 +7,9 @@
 #include <vector>
 #include <utility>
 #include <unordered_map>
+#include <iostream>
+#include <fstream>
+
 
 using namespace std;
 
@@ -14,11 +17,12 @@ class Board {
     public:
         Board();
         ~Board();
-        string getName();
+        string getFile();
         string getCreator();
         vector< pair< string, string > > getMsgs();
         vector< pair< string, string > > getAttachments();
-        int crtBoard( string, string );
+        int getFilesize();
+        int create( string, string );
         int addMsg( string, string );
         int dltMsg( string, int );
         int edtMsg( string, int, string );
@@ -26,6 +30,7 @@ class Board {
         int destroy();
     private:
         int writeBoard();
+        int filesize;
         string name;
         string file;
         string creator; 
