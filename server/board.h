@@ -6,10 +6,9 @@
 #include <string>
 #include <vector>
 #include <utility>
-#include <unordered_map>
+#include <map>
 #include <iostream>
 #include <fstream>
-
 
 using namespace std;
 
@@ -17,16 +16,17 @@ class Board {
     public:
         Board();
         ~Board();
+        string getName();
         string getFile();
         string getCreator();
         vector< pair< string, string > > getMsgs();
-        vector< pair< string, string > > getAttachments();
         int getFilesize();
         int create( string, string );
         int addMsg( string, string );
         int dltMsg( string, int );
         int edtMsg( string, int, string );
         int apnFile( string, string );
+        int checkAttachment( string );
         int destroy();
     private:
         int writeBoard();
@@ -35,5 +35,5 @@ class Board {
         string file;
         string creator; 
         vector< pair< string, string > > messages;
-        vector< pair< string, string > > attachments;
+        map< string, string > attachments;
 };

@@ -6,18 +6,15 @@
 #include "../program4.h"
 #include "board.h"
 
-#include <string>
-#include <map>
-
 using namespace std;
 
 #define MAX_PENDING 5   
 
 int main(int argc, char * argv[]){
     // initialize parameters
-    FILE *fp;
+    fstream fs;
     struct sockaddr_in udp_sin, tcp_sin, client_addr;
-    char cmd[4], buf[MAX_LINE], *username, *input_passwd, *passwd, *admin_passwd, *board;
+    char cmd[4], buf[MAX_LINE], *username, *input_passwd, *passwd, *admin_passwd, *name;
     int port, udp_s, tcp_s, new_tcp;
     int opt = 1, size = sizeof(struct sockaddr), tmp_size, flag = 1, len;
     Board tmp;
@@ -143,13 +140,12 @@ int main(int argc, char * argv[]){
             if ( strncmp( cmd, "CRT", 3 ) == 0 ) {
                 // get board name
                 string_recvfrom( udp_s, buf, 0, &client_addr );
-                board = strdup( buf );
 
                 // check if board exists already
-                if ( boards.count( board ) ) flag = -1;
+                if ( boards.count( buf ) ) flag = -1;
                 else {
                     flag = tmp.create( username, buf );
-                    boards[ board ] = tmp;
+                    boards[ buf ] = tmp;
                 }
 
                 // send confirmation
@@ -174,54 +170,191 @@ int main(int argc, char * argv[]){
             } else if ( strncmp( cmd, "MSG", 3 ) == 0 ) {
                 // get board name
                 string_recvfrom( udp_s, buf, 0, &client_addr );
-                board = strdup( buf );
+
+                // check if board exists
+                flag = boards.count( buf );
+
+                // send confirmation
+                my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
+
+                if ( !flag ) continue;
+
+                tmp = boards[ buf ];
 
                 // get message
                 string_recvfrom( udp_s, buf, 0, &client_addr );
 
-                // check if board exists
-                if ( boards.count( board ) == 0 ) flag = -1;
-                else flag = boards[ board ].addMsg( username, buf );
+                // add message
+                flag = tmp.addMsg( username, buf );
 
                 // send confirmation
                 my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
             	
             } else if ( strncmp( cmd, "DLT", 3 ) == 0 ) {
+                // get board name
+                string_recvfrom( udp_s, buf, 0, &client_addr );
+
+                // check if board exists
+                flag = boards.count( buf );
+
+                // send confirmation
+                my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
+
+                if ( !flag ) continue;
+
+                // get message index
+                my_recvfrom( udp_s, &flag, sizeof(flag), 0, &client_addr );
+
+                // delete message
+                flag = boards[ buf ].dltMsg( username, flag );
+
+                // send confirmation
+                my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
 
             } else if ( strncmp( cmd, "EDT", 3 ) == 0 ) {
+                // get board name
+                string_recvfrom( udp_s, buf, 0, &client_addr );
+
+                // check if board exists
+                flag = boards.count( buf );
+
+                // send confirmation
+                my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
+
+                if ( !flag ) continue;
+
+                tmp = boards[ buf ];
+
+                // get message index
+                my_recvfrom( udp_s, &flag, sizeof(flag), 0, &client_addr );
+
+                // get new message
+                string_recvfrom( udp_s, buf, 0, &client_addr );
+
+                // edit message
+                flag = tmp.edtMsg( username, flag, buf );
+
+                // send confirmation
+                my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
 
             } else if ( strncmp( cmd, "RDB", 3 ) == 0 ) {
                 // get board name
                 string_recvfrom( udp_s, buf, 0, &client_addr );
-                board = strdup( buf );
 
                 // check if board exists
-                if ( boards.count( board ) == 0 ) flag = -1;
-                else flag = boards[ board ].getFilesize();
+                if ( !boards.count( buf ) ) flag = -1;
+                else flag = boards[ buf ].getFilesize();
 
                 // send filesize
                 my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
             	
                 // handle file transfer
                 if ( flag == -1 ) continue;
-                else {
-                    // open board file
-                    ifstream ifs;
-                    ifs.open( boards[ board ].getFile() );
+                cout << flag << endl;
 
-                    // send contents of board file to client
-                    do {
-                        bzero( buf, sizeof(buf) );
-                        len = ifs.rdbuf()->sgetn( buf, MAX_LINE );
-                        my_send( new_tcp, buf, len, 0 );
-                    } while ( ( tmp_size += len ) < flag );
+                // open board file
+                ifstream ifs;
+                ifs.open( boards[ buf ].getFile() );
 
-                    ifs.close();
-                }
+                // send contents of board file to client
+                do {
+                    bzero( buf, sizeof(buf) );
+                    len = ifs.rdbuf()->sgetn( buf, MAX_LINE );
+                    cout << buf << endl;
+                    my_send( new_tcp, buf, len, 0 );
+                } while ( ( tmp_size += len ) < flag );
+
+                ifs.close();
 
             } else if ( strncmp( cmd, "APN", 3 ) == 0 ) {
+                // get board name
+                string_recvfrom( udp_s, buf, 0, &client_addr );
+                name = strdup( buf );
+
+                // check if board exists
+                if ( !boards.count( name ) ) flag = 0;
+                tmp = boards[ name ];
+
+                // send confirmation
+                my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
+
+                if ( !flag ) continue;
+
+                // get file info
+                string_recvfrom( udp_s, buf, 0, &client_addr );
+
+                // check if attachment already exists
+                flag = tmp.checkAttachment( buf );
+
+                // send confirmation
+                my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
+
+                if ( flag ) continue;
+
+                // receive file size
+                my_recvfrom( udp_s, &flag, sizeof(flag), 0, &client_addr );
+
+                if ( flag == -1 ) continue;
+
+                // upload file
+                fs.open( strcat( strcat( (char*)tmp.getName().c_str(), "-" ), buf ) );
+
+                // receive attachment
+                cout << endl;
+                do {
+                    bzero( buf, sizeof(buf) );
+                    if ( flag - size < sizeof(buf) )
+                        len = recv( tcp_s, buf, ( flag - size ), 0 );
+                    else len = recv( tcp_s, buf, sizeof(buf), 0 );
+                    if ( len == -1 ) {
+                        perror("receive error");
+                        exit(1);
+                    }
+                    cout << buf;
+                } while ( ( size += len ) < size );
+                cout << endl;
+
+                fs.close();
+
+                // add attachment to board object
+                flag = tmp.apnFile( username, name );
+
+                // send confirmation
+                my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
 
             } else if ( strncmp( cmd, "DWN", 3 ) == 0 ) {
+                // get board name
+                string_recvfrom( udp_s, buf, 0, &client_addr );
+
+                // check if board exists
+                flag = boards.count( buf );
+
+                // send confirmation
+                my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
+
+                if ( !flag ) continue;
+
+            	tmp = boards[ buf ];
+            	
+                // get file name
+                string_recvfrom( udp_s, buf, 0, &client_addr );
+
+                // check if attachment exists
+                flag = tmp.checkAttachment( buf );
+
+                // send filesize
+                my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
+            	
+                if ( flag < 1 ) continue;
+
+                // send contents of board file to client
+                do {
+                    bzero( buf, sizeof(buf) );
+                    len = fs.rdbuf()->sgetn( buf, MAX_LINE );
+                    my_send( new_tcp, buf, len, 0 );
+                } while ( ( tmp_size += len ) < flag );
+
+                fs.close();
 
             } else if ( strncmp( cmd, "DST", 3 ) == 0 ) {
                 // get board name

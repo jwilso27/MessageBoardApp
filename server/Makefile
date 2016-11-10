@@ -7,13 +7,13 @@ LDFLAGS=-lssl
 all: $(FILE)
 
 $(CLASS).o: $(CLASS).cpp
-	$(CC) $(CFLAGS) -c $(CLASS).cpp -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
-$(FILE).o: $(FILE).cpp
-	$(CC) $(CFLAGS) -c $(FILE).cpp -o $@
+$(FILE).o: $(FILE).cpp ../program4.h
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(FILE): $(FILE).o $(CLASS).o
-	$(CC) $(FILE).o $(CLASS).o -o $@
+	$(CC) $^ -o $@
 
 clean:
 	rm $(FILE) $(FILE).o

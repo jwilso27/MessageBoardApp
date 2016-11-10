@@ -9,10 +9,10 @@ using namespace std;
 
 int main(int argc, char * argv[]){
     // initialize parameters
-    FILE *fp;
+    fstream fs;
     struct hostent *hp;
     struct sockaddr_in udp_sin, tcp_sin;
-    char *host, *username, *passwd, *board, buf[MAX_LINE], cmd[4];
+    char *host, *file, buf[MAX_LINE], cmd[4];
     int port, udp_s, tcp_s, len, size = 0, i, flag = 1;
 
     // check arguments
@@ -92,6 +92,7 @@ int main(int argc, char * argv[]){
 
         // reset other parameters
         flag = 1;
+        size = 0;
 
         // prompt user for operation
         printf(
@@ -122,10 +123,15 @@ int main(int argc, char * argv[]){
             my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
 
             // handle confirmation
-            if ( flag ) cout << "Board successfully created" << endl;
-            else {
-                cout << "Board was not able to be created" << endl;
-                if ( flag == -1 ) cout << "(Board already exists)" << endl;
+            switch ( flag ) {
+                case 1:
+                    cout << "Board successfully created" << endl;
+                    break;
+                case -1:
+                    cout << "Board already exists" << endl;
+                    break;
+                default:
+                    cout << "Board was not able to be created" << endl;
             }
 
         } else if ( strncmp( cmd, "LIS", 3 ) == 0 ) {
@@ -139,6 +145,14 @@ int main(int argc, char * argv[]){
             // get and send board name
             cmd_query( udp_s, "board", "leave a message on", &udp_sin );
 
+            // get confirmation that board exists
+            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
+
+            if ( !flag ) {
+                cout << "Board does not exist" << endl;
+                continue;
+            }
+
             // get and send message
             cmd_query( udp_s, "message", "leave", &udp_sin );
 
@@ -146,13 +160,89 @@ int main(int argc, char * argv[]){
             my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
 
             // handle confirmation
-            if ( flag == -1 ) cout << "Board does not exist" << endl;
-            else if ( flag == 0 ) cout << "Message could not be added to board" << endl;
-            else cout << "Message was successfully added to board" << endl;
+            if ( flag ) cout << "Message was successfully added to board" << endl;
+            else cout << "Message could not be added to board" << endl;
 
         } else if ( strncmp( cmd, "DLT", 3 ) == 0 ) {
+            // get and send board name
+            cmd_query( udp_s, "board", "delete a message from", &udp_sin );
+
+            // get confirmation that board exists
+            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
+
+            if ( !flag ) {
+                cout << "Board does not exist" << endl;
+                continue;
+            }
+
+            // get and send message to delete
+            cout << "What message would you like to delete?" << endl;
+            cout << "(Please enter the index number of the message)" << endl;
+            cin >> flag;
+
+            my_sendto( udp_s, &flag, sizeof(flag), 0, &udp_sin );
+
+            // get confirmation
+            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
+
+            // handle confirmation
+            switch ( flag ) {
+                case -2:
+                    cout << "Permission denied: ";
+                    cout << "only the author of the message can delete it";
+                    cout << endl;
+                    break;
+                case -1:
+                    cout << "Invalid message index" << endl;
+                    break;
+                case 1:
+                    cout << "Message was successfully deleted from board" << endl;
+                    break;
+                default: 
+                    cout << "Message could not be deleted from board" << endl;
+            }
 
         } else if ( strncmp( cmd, "EDT", 3 ) == 0 ) {
+            // get and send board name
+            cmd_query( udp_s, "board", "edit a message from", &udp_sin );
+
+            // get confirmation that board exists
+            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
+
+            if ( !flag ) {
+                cout << "Board does not exist" << endl;
+                continue;
+            }
+
+            // get and send message to delete
+            cout << "What message would you like to edit?" << endl;
+            cout << "(Please enter the index number of the message)" << endl;
+            cin >> flag;
+
+            my_sendto( udp_s, &flag, sizeof(flag), 0, &udp_sin );
+
+            // get and send board name
+            cmd_query( udp_s, "is the new message", "leave", &udp_sin );
+
+            // get confirmation
+            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
+
+            // handle confirmation
+            switch ( flag ) {
+                case -2:
+                    cout << "Permission denied: ";
+                    cout << "only the author of the message can edit it";
+                    cout << endl;
+                    break;
+                case -1:
+                    cout << "Invalid message index" << endl;
+                    break;
+                case 1:
+                    cout << "Message was successfully editted" << endl;
+                    break;
+                default: 
+                    cout << "Message could not be editted" << endl;
+            }
 
         } else if ( strncmp( cmd, "RDB", 3 ) == 0 ) {
             // get and send board name
@@ -165,25 +255,121 @@ int main(int argc, char * argv[]){
             if ( flag == -1 ) {
                 cout << "Board does not exist" << endl;
                 continue;
-            } else {
-                cout << endl;
-                do {
-                    bzero( buf, sizeof(buf) );
-                    if ( flag - size < sizeof(buf) )
-                        len = recv( tcp_s, buf, ( flag - size ), 0 );
-                    else len = recv( tcp_s, buf, sizeof(buf), 0 );
-                    if ( len == -1 ) {
-                        perror("receive error");
-                        exit(1);
-                    }
-                    cout << buf;
-                } while ( ( size += len ) < size );
-                cout << endl;
             }
 
+            // receive board contents
+            cout << endl;
+            do {
+                bzero( buf, sizeof(buf) );
+                if ( flag - size < sizeof(buf) )
+                    len = recv( tcp_s, buf, ( flag - size ), 0 );
+                else len = recv( tcp_s, buf, sizeof(buf), 0 );
+                if ( len == -1 ) {
+                    perror("receive error");
+                    exit(1);
+                }
+                cout << buf;
+            } while ( ( size += len ) < size );
+            cout << endl;
+
         } else if ( strncmp( cmd, "APN", 3 ) == 0 ) {
+            // get and send board name
+            cmd_query( udp_s, "board", "append an attachment to", &udp_sin );
+
+            // get confirmation that board exists
+            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
+
+            if ( !flag ) {
+                cout << "Board does not exist" << endl;
+                continue;
+            }
+
+            // get and send file info
+            file = file_query( udp_s, "file", "attach", &udp_sin );
+
+            // get confirmation to send file
+            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
+
+            if ( flag > 0 ) {
+                cout << "Attachment already exists" << endl;
+                continue;
+            }
+
+            // open file
+            fs.open( file );
+            if ( !fs ) flag = -1;
+            else flag = fs.rdbuf()->pubseekoff( 0, fs.end );
+
+            // send file size
+            my_sendto( udp_s, &flag, sizeof(flag), 0, &udp_sin );
+
+            if ( flag == -1 ) {
+                cout << "File does not exist" << endl;
+                continue;
+            }
+
+            // send file to server
+            fs.rdbuf()->pubseekoff( 0, fs.beg );
+            do {
+                bzero( buf, sizeof(buf) );
+                len = fs.rdbuf()->sgetn( buf, MAX_LINE );
+                my_send( tcp_s, buf, len, 0 );
+            } while ( ( size += len ) < flag );
+
+            fs.close();
+
+            // get confirmation
+            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
+
+            // handle confirmation
+            if ( flag ) cout << "File was successfully appended" << endl;
+            else cout << "File could not be appended" << endl;
 
         } else if ( strncmp( cmd, "DWN", 3 ) == 0 ) {
+            // get and send board name
+            cmd_query( udp_s, "board", "download an attachment from", &udp_sin );
+
+            // get confirmation
+            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
+
+            // handle confirmation
+            if ( !flag ) {
+                cout << "Board does not exist" << endl;
+                continue;
+            }
+
+            // get and send file name
+            file = file_query( udp_s, "file", "download", &udp_sin );
+
+            // get file size
+            my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
+
+            // handle file size
+            if ( flag == -1 ) {
+                cout << "File is not attached to board" << endl;
+                continue;
+            } else if ( flag == 0 ) {
+                cout << "File could not be downloaded" << endl;
+                continue;
+            }
+
+            // open file
+            fs.open( file, fstream::trunc );
+
+            // download file
+            do {
+                bzero( buf, sizeof(buf) );
+                if ( flag - size < sizeof(buf) )
+                    len = recv( tcp_s, buf, ( flag - size ), 0 );
+                else len = recv( tcp_s, buf, sizeof(buf), 0 );
+                if ( len == -1 ) {
+                    perror("receive error");
+                    exit(1);
+                }
+                fs << buf;
+            } while ( ( size += len ) < size );
+
+            fs.close();
 
         } else if ( strncmp( cmd, "DST", 3 ) == 0 ) {
             // get and send board name
@@ -193,13 +379,21 @@ int main(int argc, char * argv[]){
             my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
 
             // handle confirmation
-            if ( flag == -2 ) {
-                cout << "Permission denied: ";
-                cout << "only the board's creator can destroy the board";
-                cout << endl;
-            } else if ( flag == -1 ) cout << "Board does not exist" << endl;
-            else if ( flag == 0 ) cout << "Board could not be destroyed" << endl;
-            else cout << "Board was successfully destroyed" << endl;
+            switch ( flag ) {
+                case -2:
+                    cout << "Permission denied: ";
+                    cout << "only the board's creator can destroy the board";
+                    cout << endl;
+                    break;
+                case -1:
+                    cout << "Board does not exist" << endl;
+                    break;
+                case 1:
+                    cout << "Board was successfully destroyed" << endl;
+                    break;
+                default:
+                    cout << "Board could not be destroyed" << endl;
+            }
 
         } else if ( strncmp( cmd, "SHT", 3 ) == 0 ) {
             // get password
@@ -213,12 +407,13 @@ int main(int argc, char * argv[]){
                 cout << "Permission denied: ";
                 cout << "incorrect admin password";
                 cout << endl;
-            } else {
-                // send acknowledgement to prevent server shutdown
-                // before client closes sockets
-                my_sendto( udp_s, &flag, sizeof(flag), 0, &udp_sin );
-                break;
+                continue;
             }
+
+            // send acknowledgement to prevent server shutdown
+            // before client closes sockets
+            my_sendto( udp_s, &flag, sizeof(flag), 0, &udp_sin );
+            break;
 
         } else if ( strncmp( cmd, "XIT", 3 ) == 0 ) break;
         else cout << "Invalid operation" << endl;

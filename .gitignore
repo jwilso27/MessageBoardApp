@@ -1,3 +1,6 @@
 *.o
 myfrm
 myfrmd
+*.txt
+*.pdf
+*.mp4

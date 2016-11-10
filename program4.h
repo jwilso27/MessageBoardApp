@@ -22,6 +22,10 @@
 #include <cstdio>   
 
 #include <iostream>
+#include <fstream>
+#include <string>
+
+using namespace std;
 
 #define MAX_LINE 4096 
 #define MAX_IN 256 
@@ -35,6 +39,7 @@ void string_recvfrom( int, char*, int, struct sockaddr_in* );
 void string_recv( int, char*, int );
 void cmd_query( int, char*, char*, struct sockaddr_in* );
 void user_query( int, char*, struct sockaddr_in* );
+char* file_query( int, char*, char*, struct sockaddr_in* );
 
 // sendto with error checking
 void my_sendto( int s, void* buf, size_t size, int flag, struct sockaddr_in* sin ) {
@@ -94,10 +99,42 @@ void string_recvfrom( int s, char* buf, int flag, struct sockaddr_in* sin ) {
     }
 }
 
-// get file info from user
+// get board info from user
 void cmd_query( int s, char* type, char* op, struct sockaddr_in* sin ) {
     short int len;
-    char *name, buf[256];
+    string buf;
+
+    // get name from user
+    cout << "What " << type << " would you like to " << op << "?" << endl;
+    if ( cin.get() != '\n' ) cin.unget();
+    getline( cin, buf );
+    len = buf.length() + 1;
+
+    // send file info to server
+    my_sendto( s, &len, sizeof(short int), 0, sin ); 
+    my_sendto( s, (void*)buf.c_str(), len, 0, sin );
+}
+
+// get user info
+void user_query( int s, char* info, struct sockaddr_in* sin ) {
+    short int len;
+    string buf;
+
+    // get name from user
+    cout << info << ": ";
+    if ( cin.get() != '\n' ) cin.unget();
+    getline( cin, buf );
+    len = buf.length() + 1;
+
+    // send file info to server
+    my_sendto( s, &len, sizeof(short int), 0, sin ); 
+    my_sendto( s, (void*)buf.c_str(), len, 0, sin );
+}
+
+// get file info from user
+char* file_query( int s, char* type, char* op, struct sockaddr_in* sin ) {
+    short int len;
+    char buf[256], *name;
 
     // get name from user
     printf( "What %s would you like to %s?\n", type, op );
@@ -108,20 +145,6 @@ void cmd_query( int s, char* type, char* op, struct sockaddr_in* sin ) {
     // send file info to server
     my_sendto( s, &len, sizeof(short int), 0, sin ); 
     my_sendto( s, buf, len, 0, sin );
-}
 
-// get user info
-void user_query( int s, char* info, struct sockaddr_in* sin ) {
-    short int len;
-    char *name, buf[256];
-
-    // get name from user
-    printf( "%s: ", info );
-    scanf( "%s", buf );
-    name = strdup( buf );
-    len = strlen( buf ) + 1;
-
-    // send file info to server
-    my_sendto( s, &len, sizeof(short int), 0, sin); 
-    my_sendto( s, buf, len, 0, sin );
+    return name;
 }
