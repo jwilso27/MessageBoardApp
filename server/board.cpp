@@ -33,11 +33,6 @@ vector< pair< string, string > > Board::getMsgs() {
     return messages;
 }
 
-// returns size of board file
-int Board::getFilesize() {
-    return filesize;
-}
-
 // initialize board
 int Board::create( string u, string n ) {
     // define variables
@@ -52,7 +47,7 @@ int Board::create( string u, string n ) {
 // adds message to board
 int Board::addMsg( string user, string msg ) {
     // add message to vector
-    messages.push_back( make_pair( user, msg ) );
+    messages.emplace_back( user, msg );
 
     // update board file
     return writeBoard();
@@ -94,18 +89,10 @@ int Board::apnFile( string user, string file ) {
 }
 
 // check if an attachment already exists
-int Board::checkAttachment( string file ) {
-    if ( !attachments.count( file ) ) return -1;
+string Board::checkAttachment( string file ) {
+    if ( !attachments.count( file ) ) return NULL;
 
-    fstream fs;
-    fs.open( name.append("-").append(file) );
-    if ( !fs ) return 0;
-
-    int i = fs.rdbuf()->pubseekoff( 0, fs.end ); 
-
-    fs.close();
-
-    return i;
+    return name.append("-").append( file );
 }
 
 // destroys board files
@@ -143,13 +130,6 @@ int Board::writeBoard() {
         fs << " (attachment) - " << it->second << endl;
     }
 
-    fs.close();
-
-    // update filesize
-    fs.open( file );
-    // filesize = fs.rdbuf()->pubseekoff( 0, fs.end );
-    fs.seekg( 0, fs.end );
-    filesize = fs.tellg();
     fs.close();
 
     return 1;

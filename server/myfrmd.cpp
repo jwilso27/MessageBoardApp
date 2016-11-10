@@ -243,7 +243,7 @@ int main(int argc, char * argv[]){
 
                 // check if board exists
                 if ( !boards.count( buf ) ) flag = -1;
-                else flag = boards[ buf ].getFilesize();
+                else flag = get_file_size( (char*)boards[ buf ].getFile().c_str() );
 
                 // send filesize
                 my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
@@ -273,23 +273,26 @@ int main(int argc, char * argv[]){
 
                 // check if board exists
                 if ( !boards.count( name ) ) flag = 0;
-                tmp = boards[ name ];
 
                 // send confirmation
                 my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
 
                 if ( !flag ) continue;
 
+                tmp = boards[ name ];
+
                 // get file info
                 string_recvfrom( udp_s, buf, 0, &client_addr );
 
                 // check if attachment already exists
-                flag = tmp.checkAttachment( buf );
+                name = strdup( tmp.checkAttachment( buf ).c_str() );
+                
+                if ( name != NULL ) flag = 0;
 
                 // send confirmation
                 my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
 
-                if ( flag ) continue;
+                if ( !flag ) continue;
 
                 // receive file size
                 my_recvfrom( udp_s, &flag, sizeof(flag), 0, &client_addr );
@@ -340,7 +343,10 @@ int main(int argc, char * argv[]){
                 string_recvfrom( udp_s, buf, 0, &client_addr );
 
                 // check if attachment exists
-                flag = tmp.checkAttachment( buf );
+                name = strdup( tmp.checkAttachment( buf ).c_str() );
+                
+                if ( name == NULL ) flag = -1;
+                else flag = get_file_size( name );
 
                 // send filesize
                 my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
@@ -348,6 +354,7 @@ int main(int argc, char * argv[]){
                 if ( flag < 1 ) continue;
 
                 // send contents of board file to client
+                fs.open( name );
                 do {
                     bzero( buf, sizeof(buf) );
                     len = fs.rdbuf()->sgetn( buf, MAX_LINE );

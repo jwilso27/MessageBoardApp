@@ -269,7 +269,7 @@ int main(int argc, char * argv[]){
                     exit(1);
                 }
                 cout << buf;
-            } while ( ( size += len ) < size );
+            } while ( ( size += len ) < flag );
             cout << endl;
 
         } else if ( strncmp( cmd, "APN", 3 ) == 0 ) {
@@ -290,7 +290,7 @@ int main(int argc, char * argv[]){
             // get confirmation to send file
             my_recvfrom( udp_s, &flag, sizeof(flag), 0, &udp_sin );
 
-            if ( flag > 0 ) {
+            if ( !flag ) {
                 cout << "Attachment already exists" << endl;
                 continue;
             }
@@ -298,7 +298,7 @@ int main(int argc, char * argv[]){
             // open file
             fs.open( file );
             if ( !fs ) flag = -1;
-            else flag = fs.rdbuf()->pubseekoff( 0, fs.end );
+            else flag = get_file_size( file );
 
             // send file size
             my_sendto( udp_s, &flag, sizeof(flag), 0, &udp_sin );
@@ -309,7 +309,6 @@ int main(int argc, char * argv[]){
             }
 
             // send file to server
-            fs.rdbuf()->pubseekoff( 0, fs.beg );
             do {
                 bzero( buf, sizeof(buf) );
                 len = fs.rdbuf()->sgetn( buf, MAX_LINE );

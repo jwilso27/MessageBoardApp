@@ -40,6 +40,7 @@ void string_recv( int, char*, int );
 void cmd_query( int, char*, char*, struct sockaddr_in* );
 void user_query( int, char*, struct sockaddr_in* );
 char* file_query( int, char*, char*, struct sockaddr_in* );
+int get_file_size( char* );
 
 // sendto with error checking
 void my_sendto( int s, void* buf, size_t size, int flag, struct sockaddr_in* sin ) {
@@ -147,4 +148,19 @@ char* file_query( int s, char* type, char* op, struct sockaddr_in* sin ) {
     my_sendto( s, buf, len, 0, sin );
 
     return name;
+}
+
+// returns size of board file
+int get_file_size( char* file ) {
+    FILE *fp;
+    int size;
+
+    fp = fopen( file, "r" );
+    if ( fp == NULL ) return 0;
+    
+    fseek( fp, 0L, SEEK_END );
+    size = ftell( fp );
+    fclose( fp );
+
+    return size;
 }

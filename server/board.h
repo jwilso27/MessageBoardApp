@@ -20,17 +20,15 @@ class Board {
         string getFile();
         string getCreator();
         vector< pair< string, string > > getMsgs();
-        int getFilesize();
         int create( string, string );
         int addMsg( string, string );
         int dltMsg( string, int );
         int edtMsg( string, int, string );
         int apnFile( string, string );
-        int checkAttachment( string );
+        string checkAttachment( string );
         int destroy();
     private:
         int writeBoard();
-        int filesize;
         string name;
         string file;
         string creator; 
