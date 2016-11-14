@@ -19,13 +19,12 @@ class Board {
         string getName();
         string getFile();
         string getCreator();
-        vector< pair< string, string > > getMsgs();
         int create( string, string );
         int addMsg( string, string );
         int dltMsg( string, int );
         int edtMsg( string, int, string );
         int apnFile( string, string );
-        string checkAttachment( string );
+        char* checkAttachment( string );
         int destroy();
     private:
         int writeBoard();

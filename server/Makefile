@@ -16,4 +16,4 @@ $(FILE): $(FILE).o $(CLASS).o
 	$(CC) $^ -o $@
 
 clean:
-	rm $(FILE) $(FILE).o
+	rm $(FILE) $(FILE).o $(CLASS).o

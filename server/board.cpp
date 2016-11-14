@@ -28,11 +28,6 @@ string Board::getCreator() {
     return creator;
 }
 
-// returns list of messages
-vector< pair< string, string > > Board::getMsgs() {
-    return messages;
-}
-
 // initialize board
 int Board::create( string u, string n ) {
     // define variables
@@ -80,26 +75,26 @@ int Board::edtMsg( string user, int i, string msg ) {
 }
 
 // appends file to board
-int Board::apnFile( string user, string file ) {
+int Board::apnFile( string user, string f ) {
     // add attachment to map
-    attachments[ file ] = user;
+    attachments[ f ] = user;
 
     // update board file
     return writeBoard();
 }
 
 // check if an attachment already exists
-string Board::checkAttachment( string file ) {
-    if ( !attachments.count( file ) ) return NULL;
+char* Board::checkAttachment( string f ) {
+    if ( !attachments.count( f ) ) return NULL;
 
-    return name.append("-").append( file );
+    return (char*)( name + "-" + f ).c_str();
 }
 
 // destroys board files
 int Board::destroy() {
     // delete attachments
     for ( auto it = attachments.begin(); it != attachments.end(); it++ )
-        if ( unlink( name.append( "-" ).append( it->first ).c_str() ) != 0 ) return 0;
+        if ( unlink( ( name + "-" + it->first ).c_str() ) != 0 ) return 0;
 
     // delete board file
     if ( unlink( file.c_str() ) != 0 ) return 0;

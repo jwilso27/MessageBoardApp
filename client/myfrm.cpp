@@ -353,7 +353,7 @@ int main(int argc, char * argv[]){
             }
 
             // open file
-            fs.open( file, fstream::trunc );
+            fs.open( file, fstream::out | fstream::trunc );
 
             // download file
             do {
@@ -366,9 +366,14 @@ int main(int argc, char * argv[]){
                     exit(1);
                 }
                 fs << buf;
-            } while ( ( size += len ) < size );
+                size += len;
+            } while ( size < flag );
 
             fs.close();
+
+            if ( get_file_size( file ) == flag )
+                cout << "File downloaded successfully" << endl;
+            else cout << "File could not be downloaded" << endl;
 
         } else if ( strncmp( cmd, "DST", 3 ) == 0 ) {
             // get and send board name

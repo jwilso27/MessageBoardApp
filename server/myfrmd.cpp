@@ -17,7 +17,7 @@ int main(int argc, char * argv[]){
     char cmd[4], buf[MAX_LINE], *username, *input_passwd, *passwd, *admin_passwd, *name;
     int port, udp_s, tcp_s, new_tcp;
     int opt = 1, size = sizeof(struct sockaddr), tmp_size, flag = 1, len;
-    Board tmp;
+    Board *tmp;
     map< string, Board > boards;     
     map< string, string > users;
 
@@ -144,8 +144,9 @@ int main(int argc, char * argv[]){
                 // check if board exists already
                 if ( boards.count( buf ) ) flag = -1;
                 else {
-                    flag = tmp.create( username, buf );
-                    boards[ buf ] = tmp;
+                    tmp = new Board;
+                    flag = tmp->create( username, buf );
+                    boards[ buf ] = *tmp;
                 }
 
                 // send confirmation
@@ -157,7 +158,6 @@ int main(int argc, char * argv[]){
                     len += ( it->first.length() + 1 );
                     strcat( buf, it->first.c_str() );
                     strcat( buf, "\n" );
-                    cout << buf << endl;
                 }
                 len++; // accout for null char
 
@@ -179,13 +179,13 @@ int main(int argc, char * argv[]){
 
                 if ( !flag ) continue;
 
-                tmp = boards[ buf ];
+                tmp = &boards[ buf ];
 
                 // get message
                 string_recvfrom( udp_s, buf, 0, &client_addr );
 
                 // add message
-                flag = tmp.addMsg( username, buf );
+                flag = tmp->addMsg( username, buf );
 
                 // send confirmation
                 my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
@@ -223,7 +223,7 @@ int main(int argc, char * argv[]){
 
                 if ( !flag ) continue;
 
-                tmp = boards[ buf ];
+                tmp = &boards[ buf ];
 
                 // get message index
                 my_recvfrom( udp_s, &flag, sizeof(flag), 0, &client_addr );
@@ -232,7 +232,7 @@ int main(int argc, char * argv[]){
                 string_recvfrom( udp_s, buf, 0, &client_addr );
 
                 // edit message
-                flag = tmp.edtMsg( username, flag, buf );
+                flag = tmp->edtMsg( username, flag, buf );
 
                 // send confirmation
                 my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
@@ -250,21 +250,18 @@ int main(int argc, char * argv[]){
             	
                 // handle file transfer
                 if ( flag == -1 ) continue;
-                cout << flag << endl;
 
                 // open board file
-                ifstream ifs;
-                ifs.open( boards[ buf ].getFile() );
+                fs.open( boards[ buf ].getFile() );
 
                 // send contents of board file to client
                 do {
                     bzero( buf, sizeof(buf) );
-                    len = ifs.rdbuf()->sgetn( buf, MAX_LINE );
-                    cout << buf << endl;
+                    len = fs.rdbuf()->sgetn( buf, MAX_LINE );
                     my_send( new_tcp, buf, len, 0 );
                 } while ( ( tmp_size += len ) < flag );
 
-                ifs.close();
+                fs.close();
 
             } else if ( strncmp( cmd, "APN", 3 ) == 0 ) {
                 // get board name
@@ -279,13 +276,13 @@ int main(int argc, char * argv[]){
 
                 if ( !flag ) continue;
 
-                tmp = boards[ name ];
+                tmp =& boards[ name ];
 
                 // get file info
                 string_recvfrom( udp_s, buf, 0, &client_addr );
 
                 // check if attachment already exists
-                name = strdup( tmp.checkAttachment( buf ).c_str() );
+                name = tmp->checkAttachment( buf );
                 
                 if ( name != NULL ) flag = 0;
 
@@ -294,33 +291,34 @@ int main(int argc, char * argv[]){
 
                 if ( !flag ) continue;
 
+                name = strdup( buf );
+
                 // receive file size
                 my_recvfrom( udp_s, &flag, sizeof(flag), 0, &client_addr );
 
                 if ( flag == -1 ) continue;
 
                 // upload file
-                fs.open( strcat( strcat( (char*)tmp.getName().c_str(), "-" ), buf ) );
+                fs.open( ( tmp->getName() + "-" + buf ).c_str(), fstream::out );
 
                 // receive attachment
-                cout << endl;
                 do {
                     bzero( buf, sizeof(buf) );
-                    if ( flag - size < sizeof(buf) )
-                        len = recv( tcp_s, buf, ( flag - size ), 0 );
-                    else len = recv( tcp_s, buf, sizeof(buf), 0 );
+                    if ( flag - tmp_size < sizeof(buf) )
+                        len = recv( new_tcp, buf, ( flag - tmp_size ), 0 );
+                    else len = recv( new_tcp, buf, sizeof(buf), 0 );
                     if ( len == -1 ) {
                         perror("receive error");
                         exit(1);
                     }
-                    cout << buf;
-                } while ( ( size += len ) < size );
-                cout << endl;
+                    fs << buf;
+                    tmp_size += len;
+                } while ( tmp_size < flag );
 
                 fs.close();
 
                 // add attachment to board object
-                flag = tmp.apnFile( username, name );
+                flag = tmp->apnFile( username, name );
 
                 // send confirmation
                 my_sendto( udp_s, &flag, sizeof(flag), 0, &client_addr );
@@ -337,13 +335,13 @@ int main(int argc, char * argv[]){
 
                 if ( !flag ) continue;
 
-            	tmp = boards[ buf ];
+            	tmp = &boards[ buf ];
             	
                 // get file name
                 string_recvfrom( udp_s, buf, 0, &client_addr );
 
                 // check if attachment exists
-                name = strdup( tmp.checkAttachment( buf ).c_str() );
+                name = strdup( tmp->checkAttachment( buf ) );
                 
                 if ( name == NULL ) flag = -1;
                 else flag = get_file_size( name );
@@ -359,7 +357,8 @@ int main(int argc, char * argv[]){
                     bzero( buf, sizeof(buf) );
                     len = fs.rdbuf()->sgetn( buf, MAX_LINE );
                     my_send( new_tcp, buf, len, 0 );
-                } while ( ( tmp_size += len ) < flag );
+                    tmp_size += len;
+                } while ( tmp_size < flag );
 
                 fs.close();
 
@@ -370,9 +369,9 @@ int main(int argc, char * argv[]){
                 // check if board exists
                 if ( !boards.count( buf ) ) flag = -1;
                 else {
-                    tmp = boards[ buf ];
-                    if ( strcmp( tmp.getCreator().c_str(), username ) == 0 ) {
-                        flag = tmp.destroy();
+                    tmp = &boards[ buf ];
+                    if ( strcmp( tmp->getCreator().c_str(), username ) == 0 ) {
+                        flag = tmp->destroy();
                         boards.erase( buf );
                     } else flag = -2;
                 }
