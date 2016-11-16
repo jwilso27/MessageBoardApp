@@ -238,10 +238,10 @@ int main(int argc, char * argv[]){
                     cout << "Invalid message index" << endl;
                     break;
                 case 1:
-                    cout << "Message was successfully editted" << endl;
+                    cout << "Message was successfully edited" << endl;
                     break;
                 default: 
-                    cout << "Message could not be editted" << endl;
+                    cout << "Message could not be edited" << endl;
             }
 
         } else if ( strncmp( cmd, "RDB", 3 ) == 0 ) {

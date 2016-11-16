@@ -9,7 +9,7 @@ Madelyn Nelson (mnelso12)
 - program4.h: file containing all included libraries and functions used
 - client subdirectory: includes myfrm.cpp and Makefile
 - server subdirectory: includes myfrmd.cpp, Makefile, board.cpp and board.h for
-  the board class, and one file pertaining to each existing message board 
+  the board class, and one .board file pertaining to each existing message board 
   files (requires access to /afs/nd.edu)
 
 ### Usage:
